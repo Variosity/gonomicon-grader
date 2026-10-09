@@ -75,7 +75,8 @@ async function main() {
   const sandboxed = probe.code === 0;
   if (!sandboxed && !ALLOW_UNSANDBOXED) return report("error", "Grader sandbox unavailable. Please submit again later.");
 
-  const base = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), "gnm-"));
+  // /tmp, not RUNNER_TEMP: the sandbox user ("nobody") must be able to walk the whole path, and /home/runner is closed to it.
+  const base = fs.mkdtempSync(path.join(fs.existsSync("/tmp") ? "/tmp" : os.tmpdir(), "gnm-"));
   fs.chmodSync(base, 0o755);
   const dirs = Object.fromEntries(["src", "bin", "run", "tmp", "gocache", "gopath"].map((d) => [d, path.join(base, d)]));
   for (const d of Object.values(dirs)) fs.mkdirSync(d, { recursive: true });
