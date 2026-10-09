@@ -1,0 +1,27 @@
+name: grade
+on:
+  repository_dispatch:
+    types: [grade]
+  workflow_dispatch:
+    inputs:
+      id:
+        description: Submission id
+        required: true
+permissions:
+  contents: read
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: false
+      - name: Grade
+        run: node run.mjs
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          GRADER_SECRET: ${{ secrets.GRADER_SECRET }}
+          JOB_ID: ${{ github.event.client_payload.id || inputs.id }}
