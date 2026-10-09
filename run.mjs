@@ -155,7 +155,8 @@ func TestMain(m *testing.M) {
   const missing = expected.filter((n) => !results[n] || results[n].status === "run" || results[n].status === "skip");
   const allPass = ran.code === 0 && pass.length === expected.length && !failed.length && (hasMain || proofOk);
 
-  fs.rmSync(base, { recursive: true, force: true });
+  // Files in run/ belong to the sandbox user, so removing them needs sudo. Best effort: the VM is thrown away anyway.
+  run(sudo[0] ?? "rm", sudo.length ? [...sudo.slice(1), "rm", "-rf", base] : ["-rf", base]);
   if (allPass) return report("passed", `All ${expected.length} checks passed.`);
 
   const lines = [];
