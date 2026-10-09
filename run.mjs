@@ -64,7 +64,8 @@ function parseVerbose(out) {
 }
 
 async function main() {
-  if (!SITE || SECRET.length < 24 || !/^[0-9a-f-]{36}$/i.test(ID)) throw new Error("Grader is not configured");
+  const missing = [!SITE && "SITE_URL", SECRET.length < 24 && "GRADER_SECRET (missing or under 24 chars)", !/^[0-9a-f-]{36}$/i.test(ID) && "JOB_ID"].filter(Boolean);
+if (missing.length) { console.error("::error::Grader not configured. Check: " + missing.join(", ")); process.exit(1); }
   const job = await api(`/api/grader/job?id=${ID}`);
   if (job.status !== 200) { console.log("job:", job.status, job.body?.error); return; } // already graded or unknown: nothing to report
   const { files, tests, race } = job.body;
