@@ -1,0 +1,9 @@
+{
+  "name": "gonomicon/fullstack-runtime-php",
+  "description": "Shared dependency cache used by gen-fullstack.mjs to grade PHP labs via Pest.",
+  "require-dev": {
+    "pestphp/pest": "^3.0"
+  },
+  "config": { "allow-plugins": { "pestphp/pest-plugin": true } },
+  "minimum-stability": "stable"
+}

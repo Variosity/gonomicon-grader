@@ -12,13 +12,69 @@ permissions:
 jobs:
   grade:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+
+      # ---- Go (existing — every submission needs it: shell labs grade through
+      #      Go tests, and this step costs nothing for non-Go submissions) ----
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
           cache: false
+
+      # ---- JS/TS/React/Node-API/SQL/Mongo runtime ----
+      # Caches runtime/js/node_modules directly, keyed on the committed
+      # lockfile, so a cache hit skips `npm ci` entirely (saves ~20-30s/run).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Cache JS runtime
+        id: cache-js
+        uses: actions/cache@v4
+        with:
+          path: runtime/js/node_modules
+          key: js-runtime-${{ hashFiles('runtime/js/package-lock.json') }}
+      - name: Install JS runtime
+        if: steps.cache-js.outputs.cache-hit != 'true'
+        working-directory: runtime/js
+        run: npm ci --no-audit --no-fund
+
+      # ---- Python (FastAPI/Django) runtime ----
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Cache Python runtime
+        id: cache-py
+        uses: actions/cache@v4
+        with:
+          path: runtime/py
+          key: py-runtime-${{ hashFiles('runtime/py/requirements.txt') }}
+      - name: Install Python runtime
+        if: steps.cache-py.outputs.cache-hit != 'true'
+        run: |
+          python3 -m venv runtime/py
+          runtime/py/bin/pip install --upgrade pip --quiet
+          runtime/py/bin/pip install -r runtime/py/requirements.txt --quiet
+
+      # ---- PHP (Pest) runtime ----
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer
+      - name: Cache PHP runtime
+        id: cache-php
+        uses: actions/cache@v4
+        with:
+          path: runtime/php/vendor
+          key: php-runtime-${{ hashFiles('runtime/php/composer.json') }}
+      - name: Install PHP runtime
+        if: steps.cache-php.outputs.cache-hit != 'true'
+        working-directory: runtime/php
+        run: composer install --no-interaction --no-progress
+
+      # ---- C: gcc with ASan/UBSan ships on ubuntu-latest images already ----
+
       - name: Grade
         run: node run.mjs
         env:
